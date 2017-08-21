@@ -8,8 +8,10 @@ import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +55,44 @@ public class StockSuggestSpeechlet implements Speechlet {
 	 private final String Tick = "tick";
 	 private final String Term = "term";
 	 private final String RequestedTerm = "RequestedTerm";
+	 
+	 private static Map<String,String> stockSynonms;
+	 
+	 static {
+		 stockSynonms = new HashMap<>();
+		 stockSynonms.put("APPLE", "AAPL");
+		 stockSynonms.put("AMERICAN EXPRESS", "AXP");
+		 stockSynonms.put("BOEING", "BA");
+		 stockSynonms.put("CATERPILLAR", "CAT");
+		 stockSynonms.put("CISCO", "CSCO");
+		 stockSynonms.put("CHEVRON", "CVX");
+		 stockSynonms.put("DUPONT", "DD");
+		 stockSynonms.put("DISNEY", "DIS");
+		 stockSynonms.put("GENERAL ELECTRIC", "GE");
+		 stockSynonms.put("GOLDMAN SACHS", "GS");
+		 stockSynonms.put("HOME DEPOT", "HD");
+		 stockSynonms.put("INTERNATIONAL BUSINESS MACHINES", "IBM");
+		 stockSynonms.put("INTEL", "INTC");
+		 stockSynonms.put("JOHNSON N JOHNSON", "JNJ");
+		 stockSynonms.put("JP MORGAN", "JPM");
+		 stockSynonms.put("COCA COLA", "KO");
+		 stockSynonms.put("COKE", "KO");
+		 stockSynonms.put("MAC DONALD", "MCD");
+		 stockSynonms.put("MC DONALD", "MCD");
+		 stockSynonms.put("3M", "MMM");
+		 stockSynonms.put("MICROSOFT", "MSFT");
+		 stockSynonms.put("NIKE", "NKE");
+		 stockSynonms.put("PFIZER", "PFE");
+		 stockSynonms.put("PROCTOR N GAMBLE", "PG");
+		 stockSynonms.put("TRAVELLERS", "TRV");
+		 stockSynonms.put("UNITED HEALTH", "UNH");
+		 stockSynonms.put("UNITED TECHNOLOGIES", "UTX");
+		 stockSynonms.put("VISA", "V");
+		 stockSynonms.put("VERIZON", "VZ");
+		 stockSynonms.put("WALMART", "WMT");
+		 stockSynonms.put("EXON MOBIL", "XOM"); 
+		 
+	 }
 
 
 	@Override
@@ -63,6 +103,8 @@ public class StockSuggestSpeechlet implements Speechlet {
 		 
 		 Intent intent = request.getIntent();
 		 String intentName = (intent != null) ? intent.getName() : null;
+		 
+		 log.info("Intent name :"+ intentName);
 		 if("GetStockPrice".equalsIgnoreCase(intentName)){
 			return getStockResponse(intent,session);
 		 }else if("GetStockInfo".equalsIgnoreCase(intentName)){
@@ -141,6 +183,8 @@ public class StockSuggestSpeechlet implements Speechlet {
     		String tick = slot.getValue().toUpperCase();
     		log.info("tick value : "+tick);
     		
+    		
+    		
     		List<Stock> stocks = getStockInfo(tick, 4);
     		
     		if(stocks != null && stocks.size()>0){
@@ -171,7 +215,8 @@ public class StockSuggestSpeechlet implements Speechlet {
     		size = 4;
     	}
     	
-    	stock = stock.toUpperCase();
+    	stock = (stockSynonms.containsKey(stock.toUpperCase()))?stockSynonms.get(stock.toUpperCase()):stock.toUpperCase();
+    	
     	
     	log.info("stock value : "+stock);
     	
@@ -205,18 +250,37 @@ public class StockSuggestSpeechlet implements Speechlet {
 	        	_stock.setClosePrice(item.getNumber("AdjClose").doubleValue());
 	        	_stock.setTick(item.getString("Tick"));
 	        	TrailingIndicators tIndicator = new TrailingIndicators();
-	        	tIndicator.setEma26((item.hasAttribute("EMA_26"))?item.getNumber("EMA_26").doubleValue():null);
-	        	tIndicator.setEma9((item.hasAttribute("EMA_9"))?item.getNumber("EMA_9").doubleValue():null);
-	        	tIndicator.setSma5((item.hasAttribute("SMA_5"))?item.getNumber("SMA_5").doubleValue():null);
-	        	tIndicator.setSma20((item.hasAttribute("SMA_20"))?item.getNumber("SMA_20").doubleValue():null);
-	        	tIndicator.setSma30((item.hasAttribute("SMA_30"))?item.getNumber("SMA_30").doubleValue():null);
-	        	tIndicator.setSma50((item.hasAttribute("SMA_50"))?item.getNumber("SMA_50").doubleValue():null);
-	        	tIndicator.setSma60((item.hasAttribute("SMA_60"))?item.getNumber("SMA_60").doubleValue():null);
-	        	tIndicator.setSma200((item.hasAttribute("SMA_200"))?item.getNumber("SMA_200").doubleValue():null);
+	        	if(item.hasAttribute("EMA_26")) {
+	        		double exp26 = item.getDouble("EMA_26");
+	        		tIndicator.setEma26(exp26);
+	        	}
+	        	if(item.hasAttribute("EMA_9")) {
+	        		tIndicator.setEma9(item.getDouble("EMA_9"));
+	        	}
+	        	if(item.hasAttribute("SMA_5")) {
+	        		tIndicator.setSma5(item.getDouble("SMA_5"));
+	        	}
+	        	if(item.hasAttribute("SMA_20")) {
+	        		tIndicator.setSma20(item.getDouble("SMA_20"));
+	        	}
+	        	if(item.hasAttribute("SMA_30")) {
+	        		tIndicator.setSma30(item.getDouble("SMA_30"));
+	        	}
+	        	if(item.hasAttribute("SMA_50")) {
+	        		tIndicator.setSma50(item.getDouble("SMA_50"));
+	        	}
+	        	if(item.hasAttribute("SMA_60")) {
+	        		tIndicator.setSma60(item.getDouble("SMA_60"));
+	        	}
+	        	if(item.hasAttribute("SMA_200")) {
+	        		tIndicator.setSma200(item.getDouble("SMA_200"));
+	        	}
 	        	_stock.setTrailingIndicators(tIndicator);
 	        	
 	        	stockItems.add(_stock);
-	        }    	
+	        } 
+	        
+	        log.info("returning stock items");
     	return stockItems;
     	
     	
@@ -242,13 +306,16 @@ public class StockSuggestSpeechlet implements Speechlet {
     	 * if only term slot exists in input check for equity slot in session, if equity exists in session
     	 * call the back end api, else prompt the user for equity 
     	 */
-    	
-    	if(equitySlot != null && equitySlot.getValue() != null){
+    	if((equitySlot != null && equitySlot.getValue() != null)&& (termSlot != null && termSlot.getValue() != null) ) {
+    		log.info("Both slots found");
+    		return handleEquityTermDialogRequest(intent, session);
+    	}else if(equitySlot != null && equitySlot.getValue() != null){
+    		log.info("Equity slot found");
     		return handleEquityDialogRequest(intent, session);
     	}else if(termSlot != null && termSlot.getValue() != null){
+    		log.info("Term slot found");
     		return handleTermDialogRequest(intent, session);
-    	}
-    	
+    	}   	
     	
     	return new SpeechletResponse();
     	
@@ -301,6 +368,40 @@ public class StockSuggestSpeechlet implements Speechlet {
     
     
     
+    private SpeechletResponse handleEquityTermDialogRequest(final Intent intent, final Session session){
+    	
+    	String equity = intent.getSlot(Equity).getValue();
+    	
+    	int termSize = 10;
+    	String speechText ="The stock you requested was unable to analayze";
+    	
+    	
+    	
+    		List<Stock> stockHistory = getStockInfo(equity, termSize);
+    		if(stockHistory != null && stockHistory.size()>0){
+    			log.info("found more than one entry");
+    			speechText = stockHistory.get(0).shortTermAnalysis();//TODO currently hardcoded to short term need to change
+    			log.info(speechText);
+    		}
+    		
+    		 // Create the Simple card content.
+            SimpleCard card = new SimpleCard();
+            card.setTitle("TED");
+            card.setContent(speechText);
+
+            // Create the plain text output.
+            PlainTextOutputSpeech speech = new PlainTextOutputSpeech();
+            speech.setText(speechText);
+
+            // Create reprompt
+            Reprompt reprompt = new Reprompt();
+            reprompt.setOutputSpeech(speech);
+
+            return SpeechletResponse.newTellResponse(speech, card);
+    	
+    	
+    }
+    
     private SpeechletResponse handleEquityDialogRequest(final Intent intent, final Session session){
     	
     	String equity = intent.getSlot(Equity).getValue();
@@ -339,9 +440,7 @@ public class StockSuggestSpeechlet implements Speechlet {
     		
     	}
     	
-    }
-    
-    
+    }   
     
     
     

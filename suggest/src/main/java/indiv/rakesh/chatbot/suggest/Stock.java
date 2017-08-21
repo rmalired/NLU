@@ -200,9 +200,9 @@ public class Stock {
 		sb.append("The short term moving average for ");
 		sb.append(tick + " is ");
 		sb.append(mvgTrend);
-		sb.append("and the closing price is ");
+		sb.append(" and the closing price is ");
 		sb.append(priceAboveBelow);
-		sb.append("20 day average.");
+		sb.append(" 20 day average.");
 		
 		
 		/*sb.append("The short term RSI is indicating an ");
