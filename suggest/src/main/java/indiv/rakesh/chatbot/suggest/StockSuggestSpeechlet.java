@@ -16,6 +16,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.amazon.speech.json.SpeechletRequestEnvelope;
 import com.amazon.speech.slu.Intent;
 import com.amazon.speech.slu.Slot;
 import com.amazon.speech.speechlet.IntentRequest;
@@ -26,6 +27,7 @@ import com.amazon.speech.speechlet.SessionStartedRequest;
 import com.amazon.speech.speechlet.Speechlet;
 import com.amazon.speech.speechlet.SpeechletException;
 import com.amazon.speech.speechlet.SpeechletResponse;
+import com.amazon.speech.speechlet.SpeechletV2;
 import com.amazon.speech.ui.OutputSpeech;
 import com.amazon.speech.ui.PlainTextOutputSpeech;
 import com.amazon.speech.ui.Reprompt;
@@ -80,6 +82,7 @@ public class StockSuggestSpeechlet implements Speechlet {
 		 stockSynonms.put("MAC DONALD", "MCD");
 		 stockSynonms.put("MC DONALD", "MCD");
 		 stockSynonms.put("3M", "MMM");
+		 stockSynonms.put("THREE M", "MMM");
 		 stockSynonms.put("MICROSOFT", "MSFT");
 		 stockSynonms.put("NIKE", "NKE");
 		 stockSynonms.put("PFIZER", "PFE");
@@ -108,6 +111,15 @@ public class StockSuggestSpeechlet implements Speechlet {
 		 if("GetStockPrice".equalsIgnoreCase(intentName)){
 			return getStockResponse(intent,session);
 		 }else if("GetStockInfo".equalsIgnoreCase(intentName)){
+			 
+			 //String dialogState =  request.getDialogState().name();
+			 if(request.getDialogState() != null){
+				 String dialogStateString = request.getDialogState().toString();
+					
+					//log.info("Dialog state : "+dialogState);
+					log.info("Dialog state string : "+ dialogStateString);
+			 }
+			
 			return getStockAnalysis(intent, session);
 		 }
 		 else if("AMAZON.HelpIntent".equals(intentName)){
@@ -182,8 +194,6 @@ public class StockSuggestSpeechlet implements Speechlet {
     		
     		String tick = slot.getValue().toUpperCase();
     		log.info("tick value : "+tick);
-    		
-    		
     		
     		List<Stock> stocks = getStockInfo(tick, 4);
     		
@@ -317,7 +327,8 @@ public class StockSuggestSpeechlet implements Speechlet {
     	}else if(termSlot != null && termSlot.getValue() != null){
     		log.info("Term slot found");
     		return handleTermDialogRequest(intent, session);
-    	}   	
+    	}
+    	
     	
     	return new SpeechletResponse();
     	
