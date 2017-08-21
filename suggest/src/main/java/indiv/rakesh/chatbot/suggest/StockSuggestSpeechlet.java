@@ -190,6 +190,8 @@ public class StockSuggestSpeechlet implements Speechlet {
     		if(stocks != null && stocks.size()>0){
     			Stock lastInfo = stocks.get(0);
     			speechText = "The price of the "+tick+" is "+lastInfo.getClosePrice()+ " US $";
+    		} else {
+    			speechText = "Unable to retrieve the amount of the requested stock "+ tick+" , may be ask with a ticker symbol instead of full name";
     		}
     	}
 
