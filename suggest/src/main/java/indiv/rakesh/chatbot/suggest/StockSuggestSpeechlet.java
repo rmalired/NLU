@@ -8,6 +8,7 @@ import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -16,10 +17,11 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.amazon.speech.json.SpeechletRequestEnvelope;
 import com.amazon.speech.slu.Intent;
 import com.amazon.speech.slu.Slot;
+import com.amazon.speech.speechlet.Directive;
 import com.amazon.speech.speechlet.IntentRequest;
+import com.amazon.speech.speechlet.IntentRequest.DialogState;
 import com.amazon.speech.speechlet.LaunchRequest;
 import com.amazon.speech.speechlet.Session;
 import com.amazon.speech.speechlet.SessionEndedRequest;
@@ -27,7 +29,7 @@ import com.amazon.speech.speechlet.SessionStartedRequest;
 import com.amazon.speech.speechlet.Speechlet;
 import com.amazon.speech.speechlet.SpeechletException;
 import com.amazon.speech.speechlet.SpeechletResponse;
-import com.amazon.speech.speechlet.SpeechletV2;
+import com.amazon.speech.speechlet.dialog.directives.DelegateDirective;
 import com.amazon.speech.ui.OutputSpeech;
 import com.amazon.speech.ui.PlainTextOutputSpeech;
 import com.amazon.speech.ui.Reprompt;
@@ -107,20 +109,49 @@ public class StockSuggestSpeechlet implements Speechlet {
 		 Intent intent = request.getIntent();
 		 String intentName = (intent != null) ? intent.getName() : null;
 		 
-		 log.info("Intent name :"+ intentName);
+		 DialogState dialogState = request.getDialogState()==null ? DialogState.STARTED: request.getDialogState();
+		 log.info("dialogState ={}", dialogState);
+		 
+		 log.info("intentName ={}", intentName);
 		 if("GetStockPrice".equalsIgnoreCase(intentName)){
 			return getStockResponse(intent,session);
 		 }else if("GetStockInfo".equalsIgnoreCase(intentName)){
-			 
-			 //String dialogState =  request.getDialogState().name();
-			 if(request.getDialogState() != null){
-				 String dialogStateString = request.getDialogState().toString();
-					
-					//log.info("Dialog state : "+dialogState);
-					log.info("Dialog state string : "+ dialogStateString);
-			 }
-			
-			return getStockAnalysis(intent, session);
+			 Slot equitySlot= null;
+			 Slot termSlot = null;
+			 switch(dialogState) {
+			 default:
+			 case STARTED:
+				 equitySlot = intent.getSlot("equity");
+				 termSlot = intent.getSlot("term");
+				 
+				 if(equitySlot == null || equitySlot.getValue() == null || equitySlot.getValue().trim().isEmpty()) {
+				   log.info("Dialog.ElicitSlot equity");
+				   return newDelegateResponse(intent);
+				 }
+				 
+				 if(termSlot == null || termSlot.getValue() == null || termSlot.getValue().trim().isEmpty()) {
+					   log.info("Dialog.ElicitSlot term");
+					   return newDelegateResponse(intent);
+				}
+			 case IN_PROGRESS:
+				 equitySlot = intent.getSlot("equity");
+				 termSlot = intent.getSlot("term");
+				 
+				 if(equitySlot == null || equitySlot.getValue() == null || equitySlot.getValue().trim().isEmpty()) {
+				   log.info("Dialog.ElicitSlot equity");
+				   return newDelegateResponse(intent);
+				 }
+				 
+				 if(termSlot == null || termSlot.getValue() == null || termSlot.getValue().trim().isEmpty()) {
+					   log.info("Dialog.ElicitSlot term");
+					   return newDelegateResponse(intent);
+				}
+				 
+			 case COMPLETED:	
+				 // Assuming all slots are filled - no cross checking of slot values
+				 return getStockAnalysis(intent, session);
+				 
+			 }			
 		 }
 		 else if("AMAZON.HelpIntent".equals(intentName)){
 			 return getHelpResponse();
@@ -464,11 +495,11 @@ public class StockSuggestSpeechlet implements Speechlet {
      * @return SpeechletResponse spoken and visual response for the given intent
      */
     private SpeechletResponse getHelpResponse() {
-        String speechText = "You can say hello to me!";
+        String speechText = "You can request TED to know the value of stock and check for technical anaysis. You can say what's the price of AAPLE";
 
         // Create the Simple card content.
         SimpleCard card = new SimpleCard();
-        card.setTitle("HelloWorld");
+        card.setTitle("Ted");
         card.setContent(speechText);
 
         // Create the plain text output.
@@ -532,5 +563,20 @@ public class StockSuggestSpeechlet implements Speechlet {
         reprompt.setOutputSpeech(repromptOutputSpeech);
         return SpeechletResponse.newAskResponse(outputSpeech, reprompt);
     }
+    
+    
+    /**
+     * 
+     * @param updatedIntent
+     * @return
+     */
+    public static SpeechletResponse newDelegateResponse(Intent updatedIntent) {
+        final SpeechletResponse response = new SpeechletResponse();
+        Directive dDirective = new DelegateDirective();
+        response.setNullableShouldEndSession(false);
+        response.setDirectives(Arrays.asList(dDirective));
+        return response;
+    }
+   
 
 }
